@@ -1,97 +1,91 @@
 require 'htmlbeautifier'
 require 'rouge'
-require 'jekyll/viewsource/utils'
-require 'jekyll/viewsource/cache'
-require 'jekyll/viewsource/lexer'
+require 'lexer'
 
 module Jekyll
   module ViewSource
-    module Renderer
 
-      def self.render_items
-        @render_items ||= []
+    # We have to run this after the site is written 
+    # i.e. the HTML files exist
+    Jekyll::Hooks.register :site, :post_write do |site|
+      Renderer.render_html(site)
+    end
+
+    module Renderer
+      @render_items = []
+
+      puts Module.nesting.inspect
+      puts ViewSource.constants.inspect
+
+      INFIX = '-src'.freeze
+
+      INFIXED_HTML = "#{INFIX}.#{HTML}".freeze
+      INFIXED_TXT = "#{INFIX}.#{TXT}".freeze
+
+      PRETTY = 'Pretty'.freeze
+      PLAIN = 'Plain'.freeze
+
+      DEFAULT_BG = '#808080'.freeze
+
+      CACHED = ' (cached)'.freeze
+
+      def self.enqueue_html(item)
+        @render_items << item
       end
 
-      def self.render_source_files(site)
-        render_items.each do |item|
-          pretty = item.data[PRETTY_PROP]
-          item.data.delete(PRETTY_PROP)
+      def self.render_item(site, item, source_file, ext, pretty = nil, linkback = nil)
+        return unless source_file
 
+        source_url = source_file +
+          ( pretty ? INFIXED_HTML : INFIXED_TXT)
+
+        dest_file = File.join(site.dest, source_url)
+        source_md = Utils.source_file(item)
+
+        if Cache.modified?(source_md, dest_file)
+          cached = ''.freeze
+          FileUtils.mkdir_p Pathname(dest_file).dirname
+
+          if pretty
+            File.write(dest_file, prettify(source_file, ext, pretty, linkback))
+          else
+            if ext == MD
+              FileUtils.cp source_file, dest_file
+            else
+              # Prettify it as text a bit, anyway
+              source_code = HtmlBeautifier.beautify File.read(source_file)
+              File.write(dest_file, source_code)
+            end
+          end
+
+          Cache.contents(source_md, dest_file, File.read(dest_file))
+
+        else
+          cached = CACHED
+          File.write(dest_file, Cache.contents(source_md, dest_file))
+        end
+
+        ViewSource.debug item, (pretty ? PRETTY : PLAIN) +
+          " #{ext}: #{source_url}#{cached}"
+
+      end
+
+      def self.render_html(site)
+        @render_items.each do |item|
+          source_file = item.data[SOURCE_FILE]
+          next unless source_file
+
+          pretty = item.data[PRETTY_PROP]
           linkback = item.data[LINKBACK_PROP]
+
+          item.data.delete(SOURCE_FILE)
+          item.data.delete(PRETTY_PROP)
           item.data.delete(LINKBACK_PROP)
 
-          ext = pretty ? HTML : TXT
-
-          source_md = Utils.source_file(item)
-
-          source_url = item.data[SOURCE_URL]
-          html_source_url = item.data[HTML_SOURCE_URL]
-
-          next unless source_url || html_source_url
-
-          if source_url
-            source_file = source_md.chomp(
-              pretty ? INFIXED_HTML : INFIXED_TXT
-            )
-
-            dest_file = File.join(site.dest, source_url)
-
-            if Cache.modified?(source_md, dest_file)
-              FileUtils.mkdir_p Pathname(dest_file).dirname
-
-              if pretty
-                ViewSource.debug item, "Pretty MD: #{source_url}"
-                File.write(dest_file, prettify(source_file, 'md', pretty, linkback))
-              else
-                ViewSource.debug item, "Plain MD: #{source_url}"
-                FileUtils.cp source_file, dest_file
-              end
-
-              Cache.contents(source_md, dest_file, File.read(dest_file))
-
-            else
-              File.write(dest_file, Cache.contents(source_md, dest_file))
-              if pretty
-                ViewSource.debug item, "Pretty MD: #{source_url} (cached)"
-              else
-                ViewSource.debug item, "Plain MD: #{source_url} (cached)"
-              end
-
-            end
-          end
-
-          if html_source_url
-            dest_file = File.join(site.dest, html_source_url)
-            source_file = dest_file.chomp(pretty ? INFIXED_HTML : INFIXED_TXT)
-
-            if Cache.modified?(source_md, dest_file)
-              FileUtils.mkdir_p Pathname(dest_file).dirname
-
-              if pretty
-                ViewSource.debug item, "Pretty HTML: #{html_source_url}"
-                File.write(dest_file, prettify(source_file, HTML, pretty, linkback))
-              else
-                # Prettify it as text a bit, anyway
-                source_code = HtmlBeautifier.beautify File.read(source_file)
-                ViewSource.debug item, "Plain HTML: #{html_source_url}"
-                File.write(dest_file, source_code)
-              end
-
-              Cache.contents(source_md, dest_file, File.read(dest_file))
-
-            else
-              File.write(dest_file, Cache.contents(source_md, dest_file))
-              if pretty
-                ViewSource.debug item, "Pretty HTML: #{html_source_url} (cached)"
-              else
-                ViewSource.debug item, "Plain HTML: #{html_source_url} (cached)"
-              end
-
-            end
-
-          end
+          render_item(site, item, source_file, HTML, pretty, linkback)
         end
-        render_items.clear
+
+        @render_items.clear
 
       end
 
@@ -99,12 +93,12 @@ module Jekyll
         source_code = File.read(source_file)
         title = File.basename(source_file)
 
-        if type == 'html'
+        if type == HTML
           source_code = HtmlBeautifier.beautify source_code
         end
 
         formatter = Rouge::Formatters::HTML.new
-        if type == 'md'
+        if type == MD
           lexer = Rouge::Lexers::ViewSource.new
         else
           lexer = Rouge::Lexers::HTML.new
@@ -116,30 +110,30 @@ module Jekyll
 
         if user_css
           if user_css =~ /^\//
-            css = File.read(File.join(site.dest, user_css))
+            source_css = File.join(site.dest, user_css)
+            css = File.read(source_css) if File.exist?(source_css)
           else
-            theme = Rouge::Theme.find(user_css)
-            if theme
-              css = theme.render(scope: CSS_SCOPE)
-            else
-              css = Rouge::Theme.find(DEFAULT_CSS).render(scope: CSS_SCOPE)
+            unless theme = Rouge::Theme.find(user_css)
+              theme = Rouge::Theme.find(DEFAULT_CSS)
             end
+            css = theme.render(scope: CSS_SCOPE)
           end
         end
 
         if m = css.match(/^\.highlight {.*?background-color:\s*(.*?);/m)
           body_bg = m[1];
         else
-          body_bg = '#808080'
+          body_bg = DEFAULT_BG
         end
 
         if linkback
           (lb_url, lb_text) = linkback.split('|$|', 2)
-          linkback = %Q(<div style="background-color: #fff; color: #000; padding: 5px;" class="viewsource-linkback">&laquo; <a href="#{lb_url}">#{lb_text}</a></div>)
+          linkback = %Q(<div style="background-color: #fff; color: #000; padding: 5px;" class="viewsource-linkback">&laquo; <a href=").freeze + %Q(#{lb_url}">#{lb_text}) + '</a></div>'.freeze
 
         end
 
-      <<-HTML
+        # TODO: External template file
+        <<-HTML
 <!DOCTYPE html>
 <html>
   <head>
@@ -156,10 +150,9 @@ module Jekyll
   </body>
 </html>
 HTML
+
       end
 
- 
     end
-
   end
 end
