@@ -1,21 +1,15 @@
+require 'jekyll/viewsource/constants'
+require 'jekyll/viewsource/cache'
+require 'jekyll/viewsource/renderer'
+
 module Jekyll
   module ViewSource
-    # Temp compatibility
-    TINYTOOLS = 'tinytools'.freeze
 
-    VIEWSOURCE = 'viewsource'.freeze
-    VIEWSOURCE_LOG = 'ViewSource:'.freeze
-
-    SOURCE_FILE = "#{VIEWSOURCE}_file".freeze
-    PRETTY_PROP = "#{VIEWSOURCE}_pretty".freeze
-    LINKBACK_PROP = "#{VIEWSOURCE}_linkback".freeze
-
-    DEFAULT_CSS = 'github'.freeze
-    CSS_SCOPE = '.highlight'.freeze
-
-    HTML = 'html'.freeze
-    TXT = 'txt'.freeze
-    MD = 'md'.freeze
+    # We have to run this after the site is written 
+    # i.e. the HTML files exist
+    Jekyll::Hooks.register :site, :post_write do |site|
+      Renderer.render_html(site)
+    end
 
     def self.debug_state(debug)
       @debug ||= debug
@@ -45,7 +39,6 @@ module Jekyll
     class Generator < Jekyll::Generator
       def generate(site)
         start_time = Time.now
-        
         ViewSource.site(site)
 
         config = site.config[VIEWSOURCE] || {}
@@ -53,7 +46,7 @@ module Jekyll
 
         @debug = config["debug"]
         ViewSource.debug_state @debug
-        ViewSource::Cache.setup(site, config['cache'].nil? || config['cache'])
+        Cache.setup(site, config['cache'].nil? || config['cache'])
 
         config['collection'] = config['collection'].split(/,\s*/) if config['collection'].is_a?(String)
 
@@ -94,7 +87,8 @@ module Jekyll
 
               # Render now
               linkback = "#{item.url}|$|#{linkback}" if linkback
-              ViewSource::Renderer.render_item(site, item, 
+              puts "RENDERING MD FROM #{dest_folder}/#{filename}"
+              Renderer.render_item(site, item, 
                 "#{dest_folder}/#{filename}", MD, pretty, linkback
               )
             end

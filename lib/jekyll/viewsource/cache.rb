@@ -1,7 +1,7 @@
 module Jekyll
   module ViewSource
 
-    module Cache
+    class Cache
       DEFAULT_CACHE = ".plugins/jekyll-viewsource/cache".freeze
 
       def self.setup(site, cache)

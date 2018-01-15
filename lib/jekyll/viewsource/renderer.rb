@@ -1,21 +1,13 @@
 require 'htmlbeautifier'
-require 'rouge'
-require 'lexer'
 
 module Jekyll
   module ViewSource
-
-    # We have to run this after the site is written 
-    # i.e. the HTML files exist
-    Jekyll::Hooks.register :site, :post_write do |site|
-      Renderer.render_html(site)
-    end
-
     module Renderer
-      @render_items = []
+      require_relative 'constants'
+      require_relative 'utils'
+      require_relative 'lexer'
 
-      puts Module.nesting.inspect
-      puts ViewSource.constants.inspect
+      @render_items = []
 
       INFIX = '-src'.freeze
 
@@ -33,14 +25,19 @@ module Jekyll
         @render_items << item
       end
 
-      def self.render_item(site, item, source_file, ext, pretty = nil, linkback = nil)
-        return unless source_file
+      def self.render_item(site, item, file_url, ext, pretty = nil, linkback = nil)
+        return unless file_url
 
-        source_url = source_file +
+        source_link = file_url +
           ( pretty ? INFIXED_HTML : INFIXED_TXT)
 
-        dest_file = File.join(site.dest, source_url)
+        puts "SITE.DEST #{site.dest} SOURCE_LINK: #{source_link}"
+
+        dest_file = File.join(site.dest, source_link)
         source_md = Utils.source_file(item)
+
+        source_file = (ext == MD ? source_md :
+          site.source + '/' + file_url)
 
         if Cache.modified?(source_md, dest_file)
           cached = ''.freeze
@@ -58,15 +55,15 @@ module Jekyll
             end
           end
 
-          Cache.contents(source_md, dest_file, File.read(dest_file))
+          Cache.contents(source_file, dest_file, File.read(dest_file))
 
         else
           cached = CACHED
-          File.write(dest_file, Cache.contents(source_md, dest_file))
+          File.write(dest_file, Cache.contents(source_file, dest_file))
         end
 
         ViewSource.debug item, (pretty ? PRETTY : PLAIN) +
-          " #{ext}: #{source_url}#{cached}"
+          " #{ext}: #{source_link}#{cached}"
 
       end
 
