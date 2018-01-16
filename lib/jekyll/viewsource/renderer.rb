@@ -91,7 +91,7 @@ module Jekyll
 
         else
           cached = CACHED
-          File.write(dest_file, Cache.contents(source_file, dest_file))
+          File.write(dest_file, Cache.contents(source_md, dest_file))
         end
 
         if @first_run || !cached
