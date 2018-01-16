@@ -2,17 +2,25 @@ require 'htmlbeautifier'
 
 module Jekyll
   module ViewSource
+
     module Renderer
       require_relative 'constants'
       require_relative 'utils'
       require_relative 'lexer'
 
-      @render_items = []
+      # We have to run this after the site is written 
+      # i.e. the HTML files exist
+      Jekyll::Hooks.register :site, :post_write do |site|
+        render_items(site)
+      end
 
-      INFIX = '-src'.freeze
+      # Little temp hacks for {{ viewsource.* }}
+      #Jekyll::Hooks.register :pages, :pre_render do |item, payload|
+      #  viewsource_hash(item, payload)
+      #end
 
-      INFIXED_HTML = "#{INFIX}.#{HTML}".freeze
-      INFIXED_TXT = "#{INFIX}.#{TXT}".freeze
+      @render_queue  = []
+      @first_run = true
 
       PRETTY = 'Pretty'.freeze
       PLAIN = 'Plain'.freeze
@@ -21,26 +29,50 @@ module Jekyll
 
       CACHED = ' (cached)'.freeze
 
-      def self.enqueue_html(item)
-        @render_items << item
+      def self.first_run
+        @first_run
       end
 
-      def self.render_item(site, item, file_url, ext, pretty = nil, linkback = nil)
+      def self.enqueue(item)
+        @render_queue << item
+      end
+
+      def self.render_items(site)
+        @render_queue.each do |item|
+          pretty = item.data.delete(PRETTY_PROP)
+          linkback = item.data.delete(LINKBACK_PROP)
+
+          if md_file = item.data.delete(MD_FILE_PROP)
+            render_source(site, item, md_file, MD, pretty, linkback)
+          end
+
+          if html_file = item.data.delete(HTML_FILE_PROP)
+            render_source(site, item, html_file, HTML, pretty, linkback)
+          end
+
+          if @first_run
+            ViewSource.debug item, "Set CSS to #{pretty}" if pretty
+            ViewSource.debug item, "Set linkback text to #{linkback}" if linkback
+          end
+        end
+
+        @render_queue.clear
+        @first_run = false
+      end
+
+      def self.render_source(site, item, file_url, ext, pretty = nil, linkback = nil)
         return unless file_url
 
         source_link = file_url +
           ( pretty ? INFIXED_HTML : INFIXED_TXT)
 
-        puts "SITE.DEST #{site.dest} SOURCE_LINK: #{source_link}"
-
         dest_file = File.join(site.dest, source_link)
         source_md = Utils.source_file(item)
 
         source_file = (ext == MD ? source_md :
-          site.source + '/' + file_url)
+          File.join(site.dest, file_url))
 
         if Cache.modified?(source_md, dest_file)
-          cached = ''.freeze
           FileUtils.mkdir_p Pathname(dest_file).dirname
 
           if pretty
@@ -55,34 +87,17 @@ module Jekyll
             end
           end
 
-          Cache.contents(source_file, dest_file, File.read(dest_file))
+          Cache.contents(source_md, dest_file, File.read(dest_file))
 
         else
           cached = CACHED
           File.write(dest_file, Cache.contents(source_file, dest_file))
         end
 
-        ViewSource.debug item, (pretty ? PRETTY : PLAIN) +
-          " #{ext}: #{source_link}#{cached}"
-
-      end
-
-      def self.render_html(site)
-        @render_items.each do |item|
-          source_file = item.data[SOURCE_FILE]
-          next unless source_file
-
-          pretty = item.data[PRETTY_PROP]
-          linkback = item.data[LINKBACK_PROP]
-
-          item.data.delete(SOURCE_FILE)
-          item.data.delete(PRETTY_PROP)
-          item.data.delete(LINKBACK_PROP)
-
-          render_item(site, item, source_file, HTML, pretty, linkback)
-        end
-
-        @render_items.clear
+        if @first_run || !cached
+          ViewSource.debug item, (pretty ? PRETTY : PLAIN) +
+            " #{ext}: #{source_link}#{cached}"
+       end
 
       end
 

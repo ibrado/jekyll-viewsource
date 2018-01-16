@@ -1,3 +1,5 @@
+require 'jekyll/viewsource/renderer'
+
 module Jekyll
   module ViewSource
 
@@ -11,7 +13,8 @@ module Jekyll
           @cache_dir = File.join(@site.source,
             (cache.is_a?(String) ? cache : DEFAULT_CACHE))
 
-          ViewSource.debug 'startup', "Setting up cache at #{@cache_dir}"
+          ViewSource.debug 'startup', "Setting up cache at #{@cache_dir}" if Renderer.first_run
+
           FileUtils.mkdir_p File.join(@cache_dir)
         end
       end

@@ -5,12 +5,6 @@ require 'jekyll/viewsource/renderer'
 module Jekyll
   module ViewSource
 
-    # We have to run this after the site is written 
-    # i.e. the HTML files exist
-    Jekyll::Hooks.register :site, :post_write do |site|
-      Renderer.render_html(site)
-    end
-
     def self.debug_state(debug)
       @debug ||= debug
     end
@@ -37,6 +31,9 @@ module Jekyll
     end
 
     class Generator < Jekyll::Generator
+      # Run at 
+      priority :low
+
       def generate(site)
         start_time = Time.now
         ViewSource.site(site)
@@ -64,15 +61,13 @@ module Jekyll
           process = items.select { |item| item.data[TINYTOOLS] || item.data[VIEWSOURCE]}
 
           process.each do |item|
-            vs_opts = item.data[TINYTOOLS] || item.data[VIEWSOURCE]
+            vs_opts = (item.data[TINYTOOLS] || item.data[VIEWSOURCE]).to_s
             if m = /pretty\s*=?\s*(['"](.*?)['"]|)/.match(vs_opts)
               pretty = m[2] || DEFAULT_CSS
-              ViewSource.debug item, "Set CSS to #{pretty}" if pretty
             end
 
             if m = /linkback\s*=?\s*(['"](.*?)['"]|)/.match(vs_opts)
               linkback = m[2] || 'Back'
-              ViewSource.debug item, "Set linkback text to #{pretty}" if linkback
             end
 
             view_md = (vs_opts =~ /\b(md|markdown)\b/i)
@@ -80,34 +75,29 @@ module Jekyll
 
             view_md ||= !view_html
 
+            suffix = (pretty ? INFIXED_HTML : INFIXED_TXT)
+            # Enqueue for post site render
             if view_md
               dest_folder = Pathname(item.url).dirname
               dest_folder = '' if dest_folder.to_s == '/'
               filename = File.basename(item.path)
-
-              # Render now
-              linkback = "#{item.url}|$|#{linkback}" if linkback
-              puts "RENDERING MD FROM #{dest_folder}/#{filename}"
-              Renderer.render_item(site, item, 
-                "#{dest_folder}/#{filename}", MD, pretty, linkback
-              )
+              item.data[MD_FILE_PROP] = "#{dest_folder}/#{filename}"
+              item.data[MD_SOURCE_URL] = item.data[MD_FILE_PROP] + suffix;
             end
 
             if view_html
-              # Enqueue for post site render
-              item.data[SOURCE_FILE] = "#{item.destination('')}".sub!(site.dest, '')
-              item.data[PRETTY_PROP] = pretty
-              item.data[LINKBACK_PROP] = "#{item.url}|$|#{linkback}" if linkback
-
-              Renderer.enqueue_html(item)
+              item.data[HTML_FILE_PROP] = "#{item.destination('')}".sub!(site.dest, '')
+              item.data[HTML_SOURCE_URL] = item.data[HTML_FILE_PROP] + suffix;
             end
-          end
 
-          elapsed = "%.3f" % (Time.now - start_time)
-          ViewSource.debug nil, "Runtime: #{elapsed}s"
- 
+            item.data[PRETTY_PROP] = pretty
+            item.data[LINKBACK_PROP] = "#{item.url}|$|#{linkback}" if linkback
+            Renderer.enqueue(item)
+          end
         end
 
+        elapsed = "%.3f" % (Time.now - start_time)
+        ViewSource.debug nil, "Runtime: #{elapsed}s"
       end
     end
   end
