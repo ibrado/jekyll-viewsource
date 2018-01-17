@@ -105,20 +105,18 @@ The default is `github`
 
 To link to your source files, use the following:
 
-`{% raw %}{{ page.source_url }}{% endraw %}`
+`{{ page.source_url }}`
 : The plain or pretty Markdown source URL
 
-`{% raw %}{{ page.html_source_url }}{% endraw %}`
+`{{ page.html_source_url }}`
 : The plain or pretty HTML source URL
 
 e.g. 
 
-{% raw %}
 ```liquid
 [View Markdown source]({{ page.source_url }})
 [View HTML source]({{ page.html_source_url }})
 ```
-{% endraw %}
 
 ### Demo
 
