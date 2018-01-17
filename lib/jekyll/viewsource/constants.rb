@@ -1,5 +1,6 @@
 module Jekyll
   module ViewSource
+
     VIEWSOURCE = 'viewsource'.freeze
     VIEWSOURCE_LOG = 'ViewSource:'.freeze
 

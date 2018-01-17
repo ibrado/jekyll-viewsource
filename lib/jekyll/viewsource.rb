@@ -31,7 +31,6 @@ module Jekyll
     end
 
     class Generator < Jekyll::Generator
-      # Run at 
       priority :low
 
       def generate(site)
@@ -80,6 +79,7 @@ module Jekyll
             view_md ||= !view_html
 
             suffix = (pretty ? INFIXED_HTML : INFIXED_TXT)
+
             # Enqueue for post site render
             if view_md || view_pr
               dest_folder = Pathname(item.url).dirname

@@ -1,7 +1,7 @@
 require 'net/http'
 
 module Jekyll
-  module ViewSource 
+  module ViewSource
 
    module Utils
       @touched = {}
@@ -15,8 +15,8 @@ module Jekyll
       end
 
       def self.modified?(source, dest, expiry = nil)
-        dest && !dest.empty? && 
-          (!File.exist?(dest) || 
+        dest && !dest.empty? &&
+          (!File.exist?(dest) ||
             (source && (File.mtime(source) > File.mtime(dest))) ||
             (expiry && ((File.mtime(dest) + expiry) <= Time.now ))
           )

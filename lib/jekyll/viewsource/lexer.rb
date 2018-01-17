@@ -5,7 +5,7 @@ module Rouge
     class ViewSource < Markdown
       tag 'viewsource'
 
-      def liquid 
+      def liquid
         @liquid ||= Liquid.new(options)
       end
 
@@ -13,7 +13,7 @@ module Rouge
         @javascript ||= Javascript.new(options)
       end
 
-      def html 
+      def html
         @html ||= HTML.new(options)
       end
 
@@ -26,7 +26,6 @@ module Rouge
 
         rule(%r(\s*<!--.*?-->\s*)m) { delegate html }
       end
-
 
     end
   end

@@ -8,7 +8,7 @@ module Jekyll
       require_relative 'utils'
       require_relative 'lexer'
 
-      # We have to run this after the site is written 
+      # We have to run this after the site is written
       # i.e. the HTML files exist
       Jekyll::Hooks.register :site, :post_write do |site|
         render_items(site)

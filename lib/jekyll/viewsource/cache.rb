@@ -50,9 +50,9 @@ module Jekyll
       def self.modified?(source, dest, expiry = nil)
         cache_path = self.location(source, dest)
         if source =~ %r[://]
-          mod = Utils.modified?(nil, cache_path, expiry) 
+          mod = Utils.modified?(nil, cache_path, expiry)
         else
-          mod = Utils.modified?(source, cache_path, expiry) 
+          mod = Utils.modified?(source, cache_path, expiry)
         end
         mod
       end
@@ -60,7 +60,6 @@ module Jekyll
       def self.valid?(source, dest, expiry = nil)
         ! self.modified?(source, dest, expiry)
       end
-
 
     end
 
