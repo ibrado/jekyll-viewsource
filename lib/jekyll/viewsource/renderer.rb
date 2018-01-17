@@ -14,11 +14,6 @@ module Jekyll
         render_items(site)
       end
 
-      # Little temp hacks for {{ viewsource.* }}
-      #Jekyll::Hooks.register :pages, :pre_render do |item, payload|
-      #  viewsource_hash(item, payload)
-      #end
-
       @render_queue  = []
       @first_run = true
 

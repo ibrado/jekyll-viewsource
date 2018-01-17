@@ -35,11 +35,12 @@ module Jekyll
       priority :low
 
       def generate(site)
-        start_time = Time.now
         ViewSource.site(site)
 
         config = site.config[VIEWSOURCE] || {}
         return unless config["enabled"].nil? || config["enabled"]
+
+        config['options'] ||= ''
 
         @debug = config["debug"]
         ViewSource.debug_state @debug
@@ -47,7 +48,8 @@ module Jekyll
 
         config['collection'] = config['collection'].split(/,\s*/) if config['collection'].is_a?(String)
 
-        collections = [ config['collection'], config["collections"] ].flatten.compact.uniq;
+        collections = [ config['collection'], config["collections"] ].flatten.compact.uniq
+
         collections = [ "posts", "pages" ] if collections.empty?
 
         collections.each do |collection|
@@ -58,10 +60,11 @@ module Jekyll
             items = site.collections[collection].docs
           end
 
-          process = items.select { |item| item.data[TINYTOOLS] || item.data[VIEWSOURCE]}
+          process = items.select { |item| item.data[VIEWSOURCE]}
 
           process.each do |item|
-            vs_opts = (item.data[TINYTOOLS] || item.data[VIEWSOURCE]).to_s
+            vs_opts = item.data[VIEWSOURCE].to_s + ' ' + config['options']
+
             if m = /pretty\s*=?\s*(['"](.*?)['"]|)/.match(vs_opts)
               pretty = m[2] || DEFAULT_CSS
             end
@@ -71,33 +74,43 @@ module Jekyll
             end
 
             view_md = (vs_opts =~ /\b(md|markdown)\b/i)
+            view_pr = (vs_opts =~ /\b(prerender)\b/i)
             view_html = (vs_opts =~ /\bhtml\b/i)
 
             view_md ||= !view_html
 
             suffix = (pretty ? INFIXED_HTML : INFIXED_TXT)
             # Enqueue for post site render
-            if view_md
+            if view_md || view_pr
               dest_folder = Pathname(item.url).dirname
               dest_folder = '' if dest_folder.to_s == '/'
               filename = File.basename(item.path)
               item.data[MD_FILE_PROP] = "#{dest_folder}/#{filename}"
-              item.data[MD_SOURCE_URL] = item.data[MD_FILE_PROP] + suffix;
+              if view_md
+                item.data[MD_SOURCE_URL] = item.data[MD_FILE_PROP] + suffix
+              end
+
+              if view_pr
+                item.data[PR_SOURCE_URL] = item.data[MD_FILE_PROP] + suffix
+              end
             end
 
             if view_html
               item.data[HTML_FILE_PROP] = "#{item.destination('')}".sub!(site.dest, '')
-              item.data[HTML_SOURCE_URL] = item.data[HTML_FILE_PROP] + suffix;
+              item.data[HTML_SOURCE_URL] = item.data[HTML_FILE_PROP] + suffix
             end
 
             item.data[PRETTY_PROP] = pretty
             item.data[LINKBACK_PROP] = "#{item.url}|$|#{linkback}" if linkback
-            Renderer.enqueue(item)
+            if view_md || view_html
+              Renderer.enqueue(item)
+            elsif view_pr
+              Renderer.enqueue(item, PR)
+            end
+
           end
         end
 
-        elapsed = "%.3f" % (Time.now - start_time)
-        ViewSource.debug nil, "Runtime: #{elapsed}s"
       end
     end
   end
