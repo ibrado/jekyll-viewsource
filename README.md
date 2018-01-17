@@ -126,7 +126,7 @@ e.g.
 
 ## Cache
 
-*ViewSource* has a cache at `*site_source*/.plugins/jekyll-viewsource`. If you encounter problems that you think may be related to the cache, you may remove this.
+*ViewSource* maintains a cache in a hidden folder inside your site source: `plugins/jekyll-viewsource`. If you encounter problems that you think may be related to the cache, you may remove this.
 
 ## Contributing
 
