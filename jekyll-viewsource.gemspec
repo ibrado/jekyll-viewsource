@@ -10,8 +10,8 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Alex Ibrado"]
   spec.email         = ["alex@ibrado.org"]
 
-  spec.summary       = %q{View plain or pretty Markdown and HTML source code}
-  spec.description   = %q{This Jekyll plugin generates pretty or plain Markdown source code of your content, which you can easily link to for viewing.}
+  spec.summary       = %q{View plain or pretty Markdown and/or HTML source code}
+  spec.description   = %q{This Jekyll plugin generates pretty or plain Markdown and/or HTML source code pages for your Markdown docs, which you can easily link to for viewing.}
   spec.homepage      = "https://github.com/ibrado/jekyll-viewsource"
   spec.license       = "MIT"
 
