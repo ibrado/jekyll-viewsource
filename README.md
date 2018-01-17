@@ -2,7 +2,7 @@
 
 [![Gem Version](https://badge.fury.io/rb/jekyll-viewsource.svg)](https://badge.fury.io/rb/jekyll-viewsource)
 
-*JekyLl:ViewSource* is a plugin for [Jekyll](https://jekyllrb.com/) that generates your content's plain or pretty Markdown and HTML source code files that you can easily link to.
+*Jekyll:ViewSource* is a plugin for [Jekyll](https://jekyllrb.com/) that generates plain or pretty Markdown and HTML source code pages from your content.
 
 ## Installation
 
@@ -23,8 +23,6 @@ Or install it yourself:
 
     $ gem install jekyll-viewsource
 
-    $ gem install jekyll-viewsource
-
 ## Configuration
 
 No configuration is required to run *Jekyll::ViewSource*. If you want to tweak its behavior, you may set the following options in `_config.yml`:
@@ -38,13 +36,14 @@ viewsource:
     - pages                          # Quotes are optional if collection names are obviously strings
     - posts
     - articles
+  options: pretty                    # Options that normally go in a doc's front matter
 ```
 
 ## Usage
 
 Just add a `viewsource: true` entry to the front-matter of the content for you want to create source files:
 
-### Plain Mardown
+### Plain Markdown
 
 ```yaml
 ---
@@ -57,22 +56,18 @@ viewsource: true
 ### Plain HTML
 
 ```yaml
----
 viewsource: html
----
 ```
 
 ### Plain Markdown and HTML
 
 ```yaml
----
 viewsource: markdown, html
----
 ```
 
 ### Prettified
 
-Add `pretty[="<rouge_template|css_path>"], e.g.
+Add <code>pretty[="<rouge_template|css_path>"]</code>, e.g.
 
 ```yaml
 viewsource: markdown, html, pretty
@@ -110,12 +105,25 @@ The default is `github`
 
 To link to your source files, use the following:
 
-
-`{% raw %}{{ page.source_url %}{% endraw %}`
+`{% raw %}{{ page.source_url }}{% endraw %}`
 : The plain or pretty Markdown source URL
 
-`{% raw %}{{ page.source_url %}{% endraw %}`
+`{% raw %}{{ page.html_source_url }}{% endraw %}`
 : The plain or pretty HTML source URL
+
+e.g. 
+
+{% raw %}
+```liquid
+[View Markdown source]({{ page.source_url }})
+[View HTML source]({{ page.html_source_url }})
+```
+{% endraw %}
+
+### Demo
+
+[View Markdown source](https://ibrado.org/jvs.md-src.html)
+[View HTML source](https://ibrado.org/jvs/index.html-src.html)
 
 ## Contributing
 
