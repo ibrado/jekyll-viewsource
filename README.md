@@ -124,6 +124,10 @@ e.g.
 
 [View HTML source](https://ibrado.org/jvs/index.html-src.html)
 
+## Cache
+
+*ViewSource* maintains a cache in a hidden folder inside your site source: `.plugins/jekyll-viewsource`. If you encounter problems that you think may be related to the cache, you may remove this.
+
 ## Contributing
 
 1. Fork this project: [https://github.com/ibrado/jekyll-viewsource/fork](https://github.com/ibrado/jekyll-viewsource/fork)
