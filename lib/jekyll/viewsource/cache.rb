@@ -4,14 +4,13 @@ module Jekyll
   module ViewSource
 
     class Cache
-      DEFAULT_CACHE = ".plugins/jekyll-viewsource/cache".freeze
+      DEFAULT_CACHE = File.join(Dir.home, '.jekyll-plugins', 'jekyll-viewsource', 'cache').freeze
 
       def self.setup(site, cache)
         @site = site
 
         if cache
-          @cache_dir = File.join(@site.source,
-            (cache.is_a?(String) ? cache : DEFAULT_CACHE))
+          @cache_dir = (cache.is_a?(String) ? cache : DEFAULT_CACHE)
 
           ViewSource.debug 'startup', "Setting up cache at #{@cache_dir}" if Renderer.first_run
 
