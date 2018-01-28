@@ -4,6 +4,10 @@
 
 *Jekyll:ViewSource* is a plugin for [Jekyll](https://jekyllrb.com/) that generates plain or pretty Markdown and HTML source code pages from your content.
 
+## What's new?
+
+*v1.0.1* Improvements to lexer; cache location; inclusion in `_config.yml`
+
 ## Installation
 
 Add the gem to your application's Gemfile:
@@ -126,7 +130,7 @@ e.g.
 
 ## Cache
 
-*ViewSource* maintains a cache in a hidden folder inside your site source: `.plugins/jekyll-viewsource`. If you encounter problems that you think may be related to the cache, you may remove this.
+*ViewSource* maintains a cache in a hidden folder inside your home directory: `.jekyll-plugins/jekyll-viewsource`. If you encounter problems that you think may be related to the cache, you may remove this.
 
 ## Contributing
 
