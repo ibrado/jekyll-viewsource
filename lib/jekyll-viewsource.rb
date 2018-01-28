@@ -1,6 +1,6 @@
-require 'jekyll/viewsource/constants'
-require 'jekyll/viewsource/cache'
-require 'jekyll/viewsource/renderer'
+require 'jekyll-viewsource/constants'
+require 'jekyll-viewsource/cache'
+require 'jekyll-viewsource/renderer'
 
 module Jekyll
   module ViewSource

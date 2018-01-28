@@ -1,4 +1,4 @@
-require 'jekyll/viewsource/renderer'
+require 'jekyll-viewsource/renderer'
 
 module Jekyll
   module ViewSource
